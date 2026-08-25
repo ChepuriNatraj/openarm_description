@@ -79,6 +79,36 @@ xacro $(ros2 pkg prefix --share openarm_description)/assets/robot/openarm_v2.0/u
 
 ---
 
+## Isaac Sim & ROS 2 Real-Time Visualization
+
+You can synchronize robot motions in real-time between ROS 2 (`/joint_states`) and Isaac Sim:
+
+### 1. Open the Robot in Isaac Sim
+```bash
+isaac src/openarm_description/usd/openarm.usd
+```
+
+### 2. Connect ROS 2 Joint State Bridge in Isaac Sim
+Inside Isaac Sim:
+* Open **Window** $\rightarrow$ **Script Editor** (or press `Ctrl+Shift+E`).
+* Open and run [`scripts/setup_isaac_ros2_bridge.py`](src/openarm_description/scripts/setup_isaac_ros2_bridge.py).
+* Press the **Play** ($\blacktriangleright$) button in Isaac Sim.
+
+### 3. Drive Robot Motions from ROS 2
+* **Option A - Interactive GUI Sliders**:
+  ```bash
+  ros2 launch openarm_description display_openarm.launch.py
+  ```
+  *(Moving the joint sliders in the GUI will move the robot in both RViz and Isaac Sim)*.
+
+* **Option B - Automated Smooth Motion Test**:
+  ```bash
+  source /opt/ros/jazzy/setup.bash
+  python3 src/openarm_description/scripts/publish_test_motion.py
+  ```
+
+---
+
 ## Related Links
 
 - 📚 Read the [documentation](https://docs.openarm.dev/software/description)
