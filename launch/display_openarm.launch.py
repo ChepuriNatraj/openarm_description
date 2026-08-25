@@ -22,25 +22,8 @@ from launch_ros.actions import Node
 
 # All accepted arm_type values
 VALID_ARM_TYPES = {
-    "v1.0", "v10", "v1_0", "openarm_v1.0", "openarm_v10", "openarm_v1_0",
     "v2.0", "v20", "v2_0", "openarm_v2.0", "openarm_v20", "openarm_v2_0",
 }
-
-
-def resolve_arm_config(arm_type_str: str) -> tuple[str, str]:
-    """
-    Resolve folder name and xacro file name from arm_type.
-    Accepts: v1.0, v10, v1_0, openarm_v1.0, openarm_v10, openarm_v1_0 (and v2.0 variants)
-    Raises ValueError if arm_type is not recognized.
-    """
-    if arm_type_str not in VALID_ARM_TYPES:
-        raise ValueError(
-            f"Invalid arm_type: '{arm_type_str}'. "
-            f"Accepted values: {sorted(VALID_ARM_TYPES)}."
-        )
-    if any(x in arm_type_str for x in ("1.0", "10", "1_0")):
-        return "openarm_v1.0", "openarm_v10.urdf.xacro"
-    return "openarm_v2.0", "openarm_v20.urdf.xacro"
 
 
 def robot_state_publisher_spawner(
@@ -49,13 +32,14 @@ def robot_state_publisher_spawner(
     robot_preset,
     collapse_internal_empty_links,
     emit_grasp_frame,
-    bimanual,
-    ros2_control,
     use_fake_hardware,
-    fake_sensor_commands,
 ):
     arm_type_str = context.perform_substitution(arm_type)
-    folder_name, file_name = resolve_arm_config(arm_type_str)
+    if arm_type_str not in VALID_ARM_TYPES:
+        raise ValueError(
+            f"Invalid arm_type: '{arm_type_str}'. "
+            f"Accepted values: {sorted(VALID_ARM_TYPES)}."
+        )
 
     pkg_share = get_package_share_directory("openarm_description")
 
@@ -63,29 +47,17 @@ def robot_state_publisher_spawner(
         pkg_share,
         "assets",
         "robot",
-        folder_name,
+        "openarm_v2.0",
         "urdf",
-        file_name,
+        "openarm_v20.urdf.xacro",
     )
 
-    is_v1 = any(x in arm_type_str for x in ("1.0", "10", "1_0"))
-
-    if is_v1:
-        mappings = {
-            "arm_type": arm_type_str,
-            "body_type": "v10",
-            "bimanual": context.perform_substitution(bimanual),
-            "ros2_control": context.perform_substitution(ros2_control),
-            "use_fake_hardware": context.perform_substitution(use_fake_hardware),
-            "fake_sensor_commands": context.perform_substitution(fake_sensor_commands),
-        }
-    else:
-        mappings = {
-            "arm_type": arm_type_str,
-            "robot_preset": context.perform_substitution(robot_preset),
-            "collapse_internal_empty_links": context.perform_substitution(collapse_internal_empty_links),
-            "emit_grasp_frame": context.perform_substitution(emit_grasp_frame),
-        }
+    mappings = {
+        "robot_preset": context.perform_substitution(robot_preset),
+        "collapse_internal_empty_links": context.perform_substitution(collapse_internal_empty_links),
+        "emit_grasp_frame": context.perform_substitution(emit_grasp_frame),
+        "use_fake_hardware": context.perform_substitution(use_fake_hardware),
+    }
 
     robot_description = xacro.process_file(
         xacro_path,
@@ -107,7 +79,7 @@ def generate_launch_description():
     arm_type_arg = DeclareLaunchArgument(
         "arm_type",
         default_value="v20",
-        description="Arm type. Accepts: v1.0, v10, openarm_v1.0, v2.0, v20, openarm_v2.0, etc.",
+        description="Arm type. Accepts: v2.0, v20, openarm_v2.0, etc.",
     )
     robot_preset_arg = DeclareLaunchArgument(
         "robot_preset",
@@ -126,22 +98,9 @@ def generate_launch_description():
         "emit_grasp_frame",
         default_value="false",
     )
-    bimanual_arg = DeclareLaunchArgument(
-        "bimanual",
-        default_value="true",
-        description="Enable bimanual configuration (v1.0 only).",
-    )
-    ros2_control_arg = DeclareLaunchArgument(
-        "ros2_control",
-        default_value="false",
-    )
     use_fake_hardware_arg = DeclareLaunchArgument(
         "use_fake_hardware",
-        default_value="false",
-    )
-    fake_sensor_commands_arg = DeclareLaunchArgument(
-        "fake_sensor_commands",
-        default_value="false",
+        default_value="true",
     )
 
     arm_type = LaunchConfiguration("arm_type")
@@ -149,10 +108,7 @@ def generate_launch_description():
     rviz_config = LaunchConfiguration("rviz_config")
     collapse = LaunchConfiguration("collapse_internal_empty_links")
     grasp_frame = LaunchConfiguration("emit_grasp_frame")
-    bimanual = LaunchConfiguration("bimanual")
-    ros2_control = LaunchConfiguration("ros2_control")
     use_fake_hardware = LaunchConfiguration("use_fake_hardware")
-    fake_sensor_commands = LaunchConfiguration("fake_sensor_commands")
 
     pkg_share = get_package_share_directory("openarm_description")
 
@@ -162,10 +118,7 @@ def generate_launch_description():
         rviz_config_arg,
         collapse_arg,
         grasp_frame_arg,
-        bimanual_arg,
-        ros2_control_arg,
         use_fake_hardware_arg,
-        fake_sensor_commands_arg,
         OpaqueFunction(
             function=robot_state_publisher_spawner,
             args=[
@@ -173,10 +126,7 @@ def generate_launch_description():
                 robot_preset,
                 collapse,
                 grasp_frame,
-                bimanual,
-                ros2_control,
                 use_fake_hardware,
-                fake_sensor_commands,
             ],
         ),
         Node(

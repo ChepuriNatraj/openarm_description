@@ -19,8 +19,8 @@ ASSETS_ROOT = Path(__file__).resolve().parent
 
 def get_urdf_path(robot: str, *parts: str) -> Path:
     """
+    get_urdf_path("openarm_v2.0", "openarm_v20.urdf.xacro")
     get_urdf_path("openarm_v2.0", "example", "v2.urdf")
-    get_urdf_path("openarm_v1.0", "openarm_v10.urdf.xacro")
     """
     path = ASSETS_ROOT / "robot" / robot / "urdf" / Path(*parts)
     if not path.exists():

@@ -21,7 +21,7 @@ limitations under the License.
              use_fake_hardware:=^|false
              fake_sensor_commands:=^|false
              hand:=^|false
-             ee_type:=^|parallel_link
+             ee_type:=^|pinch_gripper
              gazebo_effort:=^|false
              arm_prefix:=''
              bimanual:=false
